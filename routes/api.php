@@ -5,9 +5,12 @@ use App\Http\Controllers\HealthController;
 use App\Http\Controllers\MusicCategoryController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\StorageSigningController;
 
 # Health check endpoint
 Route::get('/health', [HealthController::class, 'ping']);
+Route::get('/health/storage-signing', [StorageSigningController::class, 'storageSigningHealth'])
+    ->middleware('throttle:api');
 
 # Auth route
 Route::middleware('throttle:auth')->group(function () {
@@ -22,6 +25,9 @@ Route::middleware('throttle:api')->group(function () {
     Route::post('/save-music', [MusicController::class, 'save_music']);
 
     Route::middleware(['auth:sanctum'])->group(function () {
+        Route::post('/sign-download', [StorageSigningController::class, 'signDownload'])
+            ->middleware('throttle:download-sign');
+
         # Music routes
         Route::get('/fetch-music-categories', [MusicCategoryController::class, 'get_music_categories']);
         Route::get('/fetch-music', [MusicController::class, 'get_music']);
