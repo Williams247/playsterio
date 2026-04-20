@@ -67,3 +67,46 @@
 
 ## Create a mailer
 ## php artisan make:mail SendOtpMail
+
+## Save music request formats
+
+`POST /api/save-music`
+
+Required header for all modes:
+- `kp: <MUSIC_KP>`
+
+Optional encrypted mode headers:
+- `X-Body-Encrypted: 1`
+
+### Plain JSON mode
+Send a normal JSON object:
+
+```json
+{
+  "title": "string",
+  "filename": "string",
+  "music_url": "https://...",
+  "thumbnail_url": "https://...",
+  "duration": "string",
+  "description": "string",
+  "category": "string"
+}
+```
+
+### Encrypted mode
+When `X-Body-Encrypted=1`, send:
+
+```json
+{
+  "asset": "<base64(iv+ciphertext+tag)>"
+}
+```
+
+Server decrypts `asset` using AES-256-GCM with key `SHA-256(kp)` before validation.
+
+### Validation response shape
+On 422, response includes:
+- `validation`: Laravel field errors
+- `missing_fields`: required fields missing/empty after parsing/decryption
+- `parsed_input`: the parsed request subset used for validation
+- `encryption.decrypt_ran_before_validation`: always `true` for this endpoint

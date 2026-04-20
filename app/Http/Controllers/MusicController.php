@@ -44,6 +44,16 @@ class MusicController extends Controller
             return JsonResponse::forbidden("You're forbidden here", null);
         }
 
+        $requiredFields = [
+            'title',
+            'filename',
+            'music_url',
+            'thumbnail_url',
+            'duration',
+            'description',
+            'category',
+        ];
+
         try {
             $create_music = $request->validate([
                 'title' => 'required|string|max:255',
@@ -57,7 +67,23 @@ class MusicController extends Controller
 
             return $this->musicService->save_music($create_music);
         } catch (ValidationException $e) {
-            return JsonResponse::unprocessable_entity('Unprocessable Entity', $e->errors());
+            $parsedInput = $request->only($requiredFields);
+            $missing = array_values(array_filter(
+                $requiredFields,
+                fn (string $field): bool => !array_key_exists($field, $parsedInput)
+                    || $parsedInput[$field] === null
+                    || $parsedInput[$field] === ''
+            ));
+
+            return JsonResponse::unprocessable_entity('Unprocessable Entity', [
+                'validation' => $e->errors(),
+                'missing_fields' => $missing,
+                'parsed_input' => $parsedInput,
+                'encryption' => [
+                    'x_body_encrypted' => (string) $request->header('X-Body-Encrypted', '0'),
+                    'decrypt_ran_before_validation' => true,
+                ],
+            ]);
         } catch (\Throwable $e) {
             \Log::error($e->getMessage(), ['exception' => $e]);
             return JsonResponse::internal_server_error('Something went wrong', null);

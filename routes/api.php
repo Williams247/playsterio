@@ -6,6 +6,7 @@ use App\Http\Controllers\MusicCategoryController;
 use App\Http\Controllers\MusicController;
 use App\Http\Controllers\AuthController;
 use App\Http\Middleware\DecryptApplicationPayload;
+use App\Http\Middleware\DecryptSaveMusicPayload;
 use App\Http\Middleware\EncryptFetchMusicResponse;
 
 # Health check endpoint
@@ -21,7 +22,8 @@ Route::middleware([DecryptApplicationPayload::class, 'throttle:auth'])->group(fu
 
 # Music route
 Route::middleware('throttle:api')->group(function () {
-    Route::post('/save-music', [MusicController::class, 'save_music']);
+    Route::post('/save-music', [MusicController::class, 'save_music'])
+        ->middleware([DecryptSaveMusicPayload::class]);
 
     Route::middleware(['auth:sanctum'])->group(function () {
         # Music routes
