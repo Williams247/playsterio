@@ -97,6 +97,15 @@ class DecryptSaveMusicPayload
     {
         $variants = [$asset];
 
+        // Compatibility with uploader format: version-byte + iv + ciphertext + tag.
+        $decodedBlob = base64_decode($asset, true);
+        if ($decodedBlob !== false && strlen($decodedBlob) >= 1 + 12 + 16) {
+            $version = ord($decodedBlob[0]);
+            if ($version === 1) {
+                $variants[] = base64_encode(substr($decodedBlob, 1));
+            }
+        }
+
         $decodedJson = json_decode($asset, true);
         if (is_array($decodedJson)) {
             $iv = $decodedJson['iv'] ?? null;
