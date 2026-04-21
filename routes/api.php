@@ -12,7 +12,7 @@ use App\Http\Middleware\EncryptFetchMusicResponse;
 # Health check endpoint
 Route::get('/health', [HealthController::class, 'ping']);
 
-# Auth route (optional body encryption: { "encryptedPayload": "<base64>" })
+# Auth route (optional body encryption: { "go": "<base64>" } or { "encryptedPayload": "<base64>" })
 Route::middleware([DecryptApplicationPayload::class, 'throttle:auth'])->group(function () {
     Route::post('/register', [AuthController::class, 'register_user']);
     Route::post('/login', [AuthController::class, 'login_user']);

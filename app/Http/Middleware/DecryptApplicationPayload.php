@@ -11,22 +11,27 @@ use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 /**
- * When the JSON body contains "encryptedPayload" (base64 AES-256-GCM blob),
+ * When the JSON body contains "go" or "encryptedPayload" (base64 AES-256-GCM blob),
  * decrypts to a JSON object and merges fields so controllers/validators see the usual shape.
- * Requests without "encryptedPayload" pass through unchanged.
+ * Requests without those keys pass through unchanged.
  */
 class DecryptApplicationPayload
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $wrapped = $request->input('encryptedPayload');
-
-        if ($wrapped === null || $wrapped === '') {
-            return $next($request);
+        $field = null;
+        $wrapped = $request->input('go');
+        if (is_string($wrapped) && $wrapped !== '') {
+            $field = 'go';
+        } else {
+            $wrapped = $request->input('encryptedPayload');
+            if (is_string($wrapped) && $wrapped !== '') {
+                $field = 'encryptedPayload';
+            }
         }
 
-        if (!is_string($wrapped)) {
-            return JsonResponse::bad_request('encryptedPayload must be a string.', null);
+        if ($field === null) {
+            return $next($request);
         }
 
         $service = PayloadEncryptionService::fromBase64Key(config('payload_encryption.key'));
@@ -53,7 +58,7 @@ class DecryptApplicationPayload
         }
 
         $request->merge($data);
-        $request->request->remove('encryptedPayload');
+        $request->request->remove($field);
 
         return $next($request);
     }
